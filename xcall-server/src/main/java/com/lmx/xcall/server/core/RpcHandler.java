@@ -2,7 +2,6 @@ package com.lmx.xcall.server.core;
 
 import com.lmx.xcall.client.RpcRequest;
 import com.lmx.xcall.client.RpcResponse;
-import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import net.sf.cglib.reflect.FastClass;
@@ -24,7 +23,7 @@ public class RpcHandler extends SimpleChannelInboundHandler<RpcRequest> {
 
     @Override
     public void channelRead0(final ChannelHandlerContext ctx, RpcRequest request) throws Exception {
-        LOGGER.info("ctx = [" + ctx + "], request = [" + request + "]");
+        LOGGER.debug("request is {}", request);
         RpcResponse response = new RpcResponse();
         response.setRequestId(request.getRequestId());
         try {
@@ -33,7 +32,7 @@ public class RpcHandler extends SimpleChannelInboundHandler<RpcRequest> {
         } catch (Throwable t) {
             response.setError(t);
         }
-        ctx.writeAndFlush(response).addListener(ChannelFutureListener.CLOSE);
+        ctx.writeAndFlush(response)/*.addListener(ChannelFutureListener.CLOSE)*/;
     }
 
     private Object handle(RpcRequest request) throws Throwable {
@@ -58,7 +57,7 @@ public class RpcHandler extends SimpleChannelInboundHandler<RpcRequest> {
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-        LOGGER.error("server caught exception", cause);
+//        LOGGER.error("server caught exception", cause);
         ctx.close();
     }
 }

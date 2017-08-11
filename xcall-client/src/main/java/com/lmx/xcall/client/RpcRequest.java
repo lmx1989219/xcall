@@ -1,5 +1,7 @@
 package com.lmx.xcall.client;
 
+import java.util.Arrays;
+
 public class RpcRequest {
 	private String requestId;
 	private String className;
@@ -47,4 +49,14 @@ public class RpcRequest {
 		this.parameters = parameters;
 	}
 
+	@Override
+	public String toString() {
+		return "RpcRequest{" +
+				"requestId='" + requestId + '\'' +
+				", className='" + className + '\'' +
+				", methodName='" + methodName + '\'' +
+				", parameterTypes=" + Arrays.toString(parameterTypes) +
+				", parameters=" + Arrays.toString(parameters) +
+				'}';
+	}
 }

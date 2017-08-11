@@ -1,15 +1,22 @@
 package com.lmx.xcall.client;
 
+import com.google.common.collect.Lists;
 import com.google.common.net.HostAndPort;
 import net.sf.cglib.proxy.InvocationHandler;
 import net.sf.cglib.proxy.Proxy;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.util.CollectionUtils;
 
 import java.lang.reflect.Method;
-import java.util.UUID;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class RpcProxy {
-    private String serverAddress;
+    private List<String> serverAddress;
     private ServiceDiscovery serviceDiscovery;
+    private Map<String, Set<RpcClient>> connPool = new ConcurrentHashMap<>();
+    private static final Logger LOGGER = LoggerFactory.getLogger(RpcProxy.class);
 
     public RpcProxy(ServiceDiscovery serviceDiscovery) {
         this.serviceDiscovery = serviceDiscovery;
@@ -21,28 +28,54 @@ public class RpcProxy {
                 new InvocationHandler() {
                     @Override
                     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-                        RpcRequest request = new RpcRequest(); // 创建并初始化 RPC 请求
+                        RpcRequest request = new RpcRequest();
                         request.setRequestId(UUID.randomUUID().toString());
                         request.setClassName(method.getDeclaringClass().getName());
                         request.setMethodName(method.getName());
                         request.setParameterTypes(method.getParameterTypes());
                         request.setParameters(args);
+                        String uniqueKey = request.getClassName();
+                        if (uniqueKey.equals("java.lang.Object"))
+                            return null;
+                        LOGGER.debug("cur thread {} invoke {}", Thread.currentThread().getId(), uniqueKey);
 
-                        if (serviceDiscovery != null) {
-                            serverAddress = serviceDiscovery.discover(request.getClassName()); // 发现服务
+                        Set<RpcClient> clients = getConnPool(uniqueKey);
+                        if (!CollectionUtils.isEmpty(clients)) {
+                            LOGGER.debug("req id {}", request.getRequestId());
+                            List<RpcClient> clientList = Lists.newArrayList(clients.iterator());
+                            RpcResponse response = clientList.get((int) System.currentTimeMillis() % clients.size())
+                                    .send(request);
+                            LOGGER.debug("resp id {}", response.getRequestId());
+                            if (response.isError()) {
+                                throw response.getError();
+                            } else {
+                                return response.getResult();
+                            }
                         }
-                        HostAndPort hostAndPort = HostAndPort.fromString(serverAddress);
-                        String host = hostAndPort.getHostText();
-                        int port = hostAndPort.getPort();
-
-                        RpcClient client = new RpcClient(host, port); // 初始化 RPC 客户端
-                        RpcResponse response = client.send(request); // 通过 RPC客户端发送RPC请求并获取RPC响应
-                        if (response.isError()) {
-                            throw response.getError();
-                        } else {
-                            return response.getResult();
-                        }
+                        return null;
                     }
                 });
+    }
+
+    private Set<RpcClient> getConnPool(String uniqueKey) {
+        if (serviceDiscovery != null) {
+            serverAddress = serviceDiscovery.discover(uniqueKey);
+        }
+        for (String add : serverAddress) {
+            HostAndPort hostAndPort = HostAndPort.fromString(add);
+            String host = hostAndPort.getHostText();
+            int port = hostAndPort.getPort();
+            RpcClient client = new RpcClient(host, port);
+            if (!connPool.containsKey(uniqueKey)) {
+                connPool.put(uniqueKey, new HashSet<RpcClient>());
+            }
+            connPool.get(uniqueKey).add(client);
+        }
+        return connPool.get(uniqueKey);
+    }
+
+    //TODO 需要考虑动态更新 与watcher的dataList对比
+    public void removePool(String uniqueKey, RpcClient client) {
+        connPool.get(uniqueKey).remove(client);
     }
 }

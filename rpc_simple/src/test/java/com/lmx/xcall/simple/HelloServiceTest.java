@@ -24,9 +24,11 @@ public class HelloServiceTest {
     @Test
     public void helloTest() {
         try {
-            HelloService helloService = rpcProxy.create(HelloService.class);
-            String result = helloService.hello("World");
-            Assert.assertEquals("Hello! World", result);
+            for (int i = 0; i < 100; i++) {
+                HelloService helloService = rpcProxy.create(HelloService.class);
+                String result = helloService.hello("World");
+                Assert.assertEquals("Hello! World", result);
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }

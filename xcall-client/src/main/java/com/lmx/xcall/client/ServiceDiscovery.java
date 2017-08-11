@@ -1,7 +1,6 @@
 package com.lmx.xcall.client;
 
 import com.lmx.xcall.common.Constant;
-import io.netty.util.internal.ThreadLocalRandom;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
@@ -35,17 +34,12 @@ public class ServiceDiscovery {
         }
     }
 
-    public String discover(String serviceName) {
-        String data = null;
+    public List<String> discover(String serviceName) {
         int size = dataList.size();
+        List<String> data = null;
         if (size > 0) {
-            if (size == 1) {
-                data = dataList.get(serviceName).get(0);
-                LOGGER.debug("using only data: {}", data);
-            } else {
-                data = dataList.get(serviceName).get(ThreadLocalRandom.current().nextInt(size));
-                LOGGER.debug("using random data: {}", data);
-            }
+            data = dataList.get(serviceName);
+            LOGGER.debug("using only data: {}", data);
         }
         return data;
     }
