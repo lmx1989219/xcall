@@ -61,6 +61,12 @@ public class RpcProxy {
         if (serviceDiscovery != null) {
             serverAddress = serviceDiscovery.discover(uniqueKey);
         }
+        if (CollectionUtils.isEmpty(serverAddress)) {
+            return null;
+        }
+        //TODO 比较池子的连接和服务发现的连接列表,做动态更新
+
+
         for (String add : serverAddress) {
             HostAndPort hostAndPort = HostAndPort.fromString(add);
             String host = hostAndPort.getHostText();
@@ -69,12 +75,14 @@ public class RpcProxy {
             if (!connPool.containsKey(uniqueKey)) {
                 connPool.put(uniqueKey, new HashSet<RpcClient>());
             }
-            connPool.get(uniqueKey).add(client);
+            if (!connPool.get(uniqueKey).contains(client)) {
+                client.initConn();
+                connPool.get(uniqueKey).add(client);
+            }
         }
         return connPool.get(uniqueKey);
     }
 
-    //TODO 需要考虑动态更新 与watcher的dataList对比
     public void removePool(String uniqueKey, RpcClient client) {
         connPool.get(uniqueKey).remove(client);
     }

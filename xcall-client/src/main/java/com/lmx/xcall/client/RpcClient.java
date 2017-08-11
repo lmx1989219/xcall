@@ -29,8 +29,10 @@ public class RpcClient extends SimpleChannelInboundHandler<RpcResponse> {
     public RpcClient(String host, int port) {
         this.host = host;
         this.port = port;
+    }
 
-        EventLoopGroup group = new NioEventLoopGroup();
+    public void initConn() {
+        EventLoopGroup group = new NioEventLoopGroup(Runtime.getRuntime().availableProcessors() * 2);
         Bootstrap bootstrap = new Bootstrap();
         bootstrap.group(group).channel(NioSocketChannel.class).handler(new ChannelInitializer<SocketChannel>() {
             @Override
