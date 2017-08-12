@@ -55,6 +55,8 @@ public class RpcClient extends SimpleChannelInboundHandler<RpcResponse> {
     @Override
     public void channelRead0(ChannelHandlerContext ctx, RpcResponse response) throws Exception {
         this.response = response;
+        if (response.getRequestId().equals("pong"))
+            return;
         try {
             CountDownLatch cd = countDownLatchs.get(response.getRequestId());
             if (cd != null)
@@ -83,6 +85,12 @@ public class RpcClient extends SimpleChannelInboundHandler<RpcResponse> {
         return response;
     }
 
+    public void sendOnly(RpcRequest request) throws Exception {
+        LOGGER.debug("hearbeat task,req:{}", request);
+        if (!channel.isOpen()) throw new Exception("conn is close");
+        channel.writeAndFlush(request);
+    }
+
     @Override
     public boolean equals(Object o) {
         return this.hashCode() == o.hashCode();
@@ -91,5 +99,13 @@ public class RpcClient extends SimpleChannelInboundHandler<RpcResponse> {
     @Override
     public int hashCode() {
         return (host + ":" + port).hashCode();
+    }
+
+    @Override
+    public String toString() {
+        return "RpcClient{" +
+                "host='" + host + '\'' +
+                ", port=" + port +
+                '}';
     }
 }

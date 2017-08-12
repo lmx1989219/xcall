@@ -2,12 +2,14 @@ package com.lmx.xcall.client;
 
 import com.google.common.collect.Lists;
 import com.google.common.net.HostAndPort;
+import io.netty.util.internal.ConcurrentSet;
 import net.sf.cglib.proxy.InvocationHandler;
 import net.sf.cglib.proxy.Proxy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.CollectionUtils;
 
+import javax.print.attribute.standard.RequestingUserName;
 import java.lang.reflect.Method;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -20,6 +22,7 @@ public class RpcProxy {
 
     public RpcProxy(ServiceDiscovery serviceDiscovery) {
         this.serviceDiscovery = serviceDiscovery;
+        checkActive.start();
     }
 
     @SuppressWarnings("unchecked")
@@ -64,16 +67,13 @@ public class RpcProxy {
         if (CollectionUtils.isEmpty(serverAddress)) {
             return null;
         }
-        //TODO 比较池子的连接和服务发现的连接列表,做动态更新
-
-
         for (String add : serverAddress) {
             HostAndPort hostAndPort = HostAndPort.fromString(add);
             String host = hostAndPort.getHostText();
             int port = hostAndPort.getPort();
             RpcClient client = new RpcClient(host, port);
             if (!connPool.containsKey(uniqueKey)) {
-                connPool.put(uniqueKey, new HashSet<RpcClient>());
+                connPool.put(uniqueKey, new ConcurrentSet<RpcClient>());
             }
             if (!connPool.get(uniqueKey).contains(client)) {
                 client.initConn();
@@ -84,6 +84,40 @@ public class RpcProxy {
     }
 
     public void removePool(String uniqueKey, RpcClient client) {
+        LOGGER.debug("remove inactive conn {}", client);
         connPool.get(uniqueKey).remove(client);
     }
+
+    private final long checkPeroid = 3000;
+    private Thread checkActive = new Thread(new Runnable() {
+        @Override
+        public void run() {
+            while (true) {
+                try {
+                    if (connPool.size() == 0)
+                        continue;
+                    for (Map.Entry<String, Set<RpcClient>> entry : connPool.entrySet()) {
+                        Set<RpcClient> clients = entry.getValue();
+                        for (RpcClient client : clients) {
+                            RpcRequest request = new RpcRequest();
+                            request.setRequestId("ping");
+                            try {
+                                client.sendOnly(request);
+                                LOGGER.debug("conn:{} is ok", client);
+                            } catch (Exception e) {
+                                LOGGER.error("{} conn error", client, e);
+                                removePool(entry.getKey(), client);
+                            }
+                        }
+                    }
+                } finally {
+                    try {
+                        Thread.sleep(checkPeroid);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }
+    });
 }

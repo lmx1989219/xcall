@@ -17,6 +17,8 @@ public class RpcHandler extends SimpleChannelInboundHandler<RpcRequest> {
 
     private final Map<String, Object> handlerMap;
 
+    private String echo = "ping";//心跳检查
+
     public RpcHandler(Map<String, Object> handlerMap) {
         this.handlerMap = handlerMap;
     }
@@ -24,6 +26,11 @@ public class RpcHandler extends SimpleChannelInboundHandler<RpcRequest> {
     @Override
     public void channelRead0(final ChannelHandlerContext ctx, RpcRequest request) throws Exception {
         LOGGER.debug("request is {}", request);
+        if (request.getRequestId().equals(echo)) {
+            RpcResponse response = new RpcResponse();
+            response.setRequestId("pong");
+            ctx.writeAndFlush(response);
+        }
         RpcResponse response = new RpcResponse();
         response.setRequestId(request.getRequestId());
         try {

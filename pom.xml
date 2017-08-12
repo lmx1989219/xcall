@@ -9,6 +9,7 @@
         <module>xcall-client</module>
         <module>xcall-server</module>
         <module>xcall_common</module>
+        <module>rpc_simple</module>
     </modules>
     <name>rpc</name>
 
