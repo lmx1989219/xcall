@@ -30,6 +30,7 @@ public class RpcHandler extends SimpleChannelInboundHandler<RpcRequest> {
             RpcResponse response = new RpcResponse();
             response.setRequestId("pong");
             ctx.writeAndFlush(response);
+            return;
         }
         RpcResponse response = new RpcResponse();
         response.setRequestId(request.getRequestId());
@@ -39,7 +40,7 @@ public class RpcHandler extends SimpleChannelInboundHandler<RpcRequest> {
         } catch (Throwable t) {
             response.setError(t);
         }
-        ctx.writeAndFlush(response)/*.addListener(ChannelFutureListener.CLOSE)*/;
+        ctx.writeAndFlush(response);
     }
 
     private Object handle(RpcRequest request) throws Throwable {

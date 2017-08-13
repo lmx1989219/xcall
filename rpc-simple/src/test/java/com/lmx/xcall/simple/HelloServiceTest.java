@@ -13,6 +13,8 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = "classpath:spring-client.xml")
@@ -20,15 +22,21 @@ public class HelloServiceTest {
 
     @Autowired
     private RpcProxy rpcProxy;
+    ExecutorService es = Executors.newFixedThreadPool(8);
 
     @Test
     public void helloTest() {
         try {
-            for (int i = 0; i < 10; i++) {
-                HelloService helloService = rpcProxy.create(HelloService.class);
-                String result = helloService.hello("World");
-                Assert.assertEquals("Hello! World", result);
-            }
+            es.submit(new Runnable() {
+                @Override
+                public void run() {
+                    HelloService helloService = rpcProxy.create(HelloService.class);
+                    for (int i = 0; i < 10; i++) {
+                        String result = helloService.hello("World");
+                        Assert.assertEquals("Hello! World", result);
+                    }
+                }
+            });
             Thread.sleep(Long.MAX_VALUE);
         } catch (Exception e) {
             e.printStackTrace();

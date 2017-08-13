@@ -21,9 +21,8 @@ public class RpcClient extends SimpleChannelInboundHandler<RpcResponse> {
     private static final Logger LOGGER = LoggerFactory.getLogger(RpcClient.class);
     private String host;
     private int port;
-    private RpcResponse response;
     private Channel channel;
-    private final Map<String, CountDownLatch> countDownLatchs = new ConcurrentHashMap<>();
+    private final Map<String, SendFuture> sendFutureMap = new ConcurrentHashMap<>();
     private long maxWait = 5000;
 
     public RpcClient(String host, int port) {
@@ -54,41 +53,50 @@ public class RpcClient extends SimpleChannelInboundHandler<RpcResponse> {
 
     @Override
     public void channelRead0(ChannelHandlerContext ctx, RpcResponse response) throws Exception {
-        this.response = response;
         if (response.getRequestId().equals("pong"))
             return;
+        String seqNo = response.getRequestId();
         try {
-            CountDownLatch cd = countDownLatchs.get(response.getRequestId());
-            if (cd != null)
-                cd.countDown();
+            SendFuture future = sendFutureMap.get(seqNo);
+            if (future != null) {
+                future.isDone();
+                future.setResponse(response);
+            }
         } finally {
-            countDownLatchs.remove(response.getRequestId());
+            sendFutureMap.remove(seqNo);
         }
 
     }
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-        LOGGER.error("client caught exception", cause);
+//        LOGGER.error("client caught exception", cause);
         ctx.close();
     }
 
     public RpcResponse send(RpcRequest request) throws Exception {
-        CountDownLatch countDownLatch = new CountDownLatch(1);
-        countDownLatchs.put(request.getRequestId(), countDownLatch);
+        SendFuture future = new SendFuture();
+        future.setCd(new CountDownLatch(1));
+        sendFutureMap.put(request.getRequestId(), future);
         LOGGER.info("invoke begin,req:{}", request);
+        checkConn();
         channel.writeAndFlush(request);
-        if (!countDownLatch.await(maxWait, TimeUnit.MILLISECONDS)) {
-            LOGGER.info("invoke timeout....");
-            return null;
+        RpcResponse response = future.get(maxWait, TimeUnit.MILLISECONDS);
+        if (response != null) {
+            return response;
         }
-        return response;
+        return null;
     }
 
     public void sendOnly(RpcRequest request) throws Exception {
-        LOGGER.debug("hearbeat task,req:{}", request);
-        if (!channel.isOpen()) throw new Exception("conn is close");
+        LOGGER.debug("heartbeat task,req:{}", request);
+        checkConn();
         channel.writeAndFlush(request);
+    }
+
+    void checkConn() throws Exception {
+        if (!channel.isOpen())
+            throw new Exception("conn is close");
     }
 
     @Override

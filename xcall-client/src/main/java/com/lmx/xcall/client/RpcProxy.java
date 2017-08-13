@@ -9,16 +9,51 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.CollectionUtils;
 
-import javax.print.attribute.standard.RequestingUserName;
 import java.lang.reflect.Method;
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class RpcProxy {
+    private long checkPeroid = 3000;
     private List<String> serverAddress;
     private ServiceDiscovery serviceDiscovery;
     private Map<String, Set<RpcClient>> connPool = new ConcurrentHashMap<>();
     private static final Logger LOGGER = LoggerFactory.getLogger(RpcProxy.class);
+
+    private Thread checkActive = new Thread(new Runnable() {
+        @Override
+        public void run() {
+            while (true) {
+                try {
+                    if (connPool.size() == 0)
+                        continue;
+                    for (Map.Entry<String, Set<RpcClient>> entry : connPool.entrySet()) {
+                        Set<RpcClient> clients = entry.getValue();
+                        for (RpcClient client : clients) {
+                            RpcRequest request = new RpcRequest();
+                            request.setRequestId("ping");
+                            try {
+                                client.sendOnly(request);
+                                LOGGER.debug("conn:{} is ok", client);
+                            } catch (Exception e) {
+                                LOGGER.error("{} conn error", client, e);
+                                removePool(entry.getKey(), client);
+                            }
+                        }
+                    }
+                } finally {
+                    try {
+                        Thread.sleep(checkPeroid);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }
+    });
 
     public RpcProxy(ServiceDiscovery serviceDiscovery) {
         this.serviceDiscovery = serviceDiscovery;
@@ -38,10 +73,7 @@ public class RpcProxy {
                         request.setParameterTypes(method.getParameterTypes());
                         request.setParameters(args);
                         String uniqueKey = request.getClassName();
-                        if (uniqueKey.equals("java.lang.Object"))
-                            return null;
                         LOGGER.debug("cur thread {} invoke {}", Thread.currentThread().getId(), uniqueKey);
-
                         Set<RpcClient> clients = getConnPool(uniqueKey);
                         if (!CollectionUtils.isEmpty(clients)) {
                             LOGGER.debug("req id {}", request.getRequestId());
@@ -87,37 +119,4 @@ public class RpcProxy {
         LOGGER.debug("remove inactive conn {}", client);
         connPool.get(uniqueKey).remove(client);
     }
-
-    private final long checkPeroid = 3000;
-    private Thread checkActive = new Thread(new Runnable() {
-        @Override
-        public void run() {
-            while (true) {
-                try {
-                    if (connPool.size() == 0)
-                        continue;
-                    for (Map.Entry<String, Set<RpcClient>> entry : connPool.entrySet()) {
-                        Set<RpcClient> clients = entry.getValue();
-                        for (RpcClient client : clients) {
-                            RpcRequest request = new RpcRequest();
-                            request.setRequestId("ping");
-                            try {
-                                client.sendOnly(request);
-                                LOGGER.debug("conn:{} is ok", client);
-                            } catch (Exception e) {
-                                LOGGER.error("{} conn error", client, e);
-                                removePool(entry.getKey(), client);
-                            }
-                        }
-                    }
-                } finally {
-                    try {
-                        Thread.sleep(checkPeroid);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-        }
-    });
 }
