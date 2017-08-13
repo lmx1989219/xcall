@@ -59,8 +59,8 @@ public class RpcClient extends SimpleChannelInboundHandler<RpcResponse> {
         try {
             SendFuture future = sendFutureMap.get(seqNo);
             if (future != null) {
-                future.isDone();
                 future.setResponse(response);
+                future.isDone();
             }
         } finally {
             sendFutureMap.remove(seqNo);
