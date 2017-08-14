@@ -119,4 +119,8 @@ public class RpcProxy {
         LOGGER.debug("remove inactive conn {}", client);
         connPool.get(uniqueKey).remove(client);
     }
+
+    public ServiceDiscovery getServiceDiscovery() {
+        return serviceDiscovery;
+    }
 }

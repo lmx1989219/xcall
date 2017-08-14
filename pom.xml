@@ -8,8 +8,7 @@
     <modules>
         <module>xcall-client</module>
         <module>xcall-server</module>
-        <module>xcall_common</module>
-        <module>rpc_simple</module>
+        <module>xcall-common</module>
     </modules>
     <name>rpc</name>
 
@@ -110,6 +109,15 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
                     <skip>true</skip>
+                </configuration>
+            </plugin>
+            <plugin>
+                <artifactId>maven-jar-plugin</artifactId>
+                <configuration>
+                    <classesDirectory>target/classes/</classesDirectory>
+                    <archive>
+                        <addMavenDescriptor>false</addMavenDescriptor>
+                    </archive>
                 </configuration>
             </plugin>
         </plugins>

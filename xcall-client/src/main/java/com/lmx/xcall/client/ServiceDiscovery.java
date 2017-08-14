@@ -25,9 +25,11 @@ public class ServiceDiscovery {
 
     private String registryAddress;
 
-    public ServiceDiscovery(String registryAddress, List<String> serviceNames) {
+    public ServiceDiscovery(String registryAddress) {
         this.registryAddress = registryAddress;
+    }
 
+    public void subScriber(List<String> serviceNames) {
         ZooKeeper zk = connectServer();
         if (zk != null) {
             watchNode(zk, serviceNames);

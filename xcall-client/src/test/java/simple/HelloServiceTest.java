@@ -1,4 +1,4 @@
-package com.lmx.xcall.simple;
+package simple;
 
 
 import com.google.common.net.InetAddresses;
@@ -17,11 +17,13 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(locations = "classpath:spring-client.xml")
+@ContextConfiguration(locations = {"classpath:spring-client.xml", "classpath:rpc-config.xml"})
 public class HelloServiceTest {
 
     @Autowired
     private RpcProxy rpcProxy;
+    @Autowired
+    HelloService helloService;
     ExecutorService es = Executors.newFixedThreadPool(8);
 
     @Test
@@ -30,7 +32,7 @@ public class HelloServiceTest {
             es.submit(new Runnable() {
                 @Override
                 public void run() {
-                    HelloService helloService = rpcProxy.create(HelloService.class);
+//                    HelloService helloService = rpcProxy.create(HelloService.class);
                     for (int i = 0; i < 10; i++) {
                         String result = helloService.hello("World");
                         Assert.assertEquals("Hello! World", result);
