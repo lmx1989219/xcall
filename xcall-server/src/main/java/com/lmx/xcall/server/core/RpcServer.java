@@ -47,6 +47,16 @@ public class RpcServer implements ApplicationContextAware, InitializingBean {
         this.serviceRegistry = serviceRegistry;
     }
 
+    public RpcServer(ServiceRegistry serviceRegistry, int port) {
+        try {
+            serverAddress = InetAddresses.toAddrString(InetAddress.getLocalHost());
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+        }
+        this.serviceRegistry = serviceRegistry;
+        this.port = port;
+    }
+
     @Override
     public void setApplicationContext(ApplicationContext ctx) throws BeansException {
         // 获取所有带有RpcService注解的SpringBean

@@ -2,7 +2,6 @@ package simple;
 
 
 import com.google.common.net.InetAddresses;
-import com.lmx.xcall.client.RpcProxy;
 import com.lmx.xcall.server.modules.simple.HelloService;
 import org.junit.Assert;
 import org.junit.Test;
@@ -21,8 +20,6 @@ import java.util.concurrent.Executors;
 public class HelloServiceTest {
 
     @Autowired
-    private RpcProxy rpcProxy;
-    @Autowired
     HelloService helloService;
     ExecutorService es = Executors.newFixedThreadPool(8);
 
@@ -32,7 +29,6 @@ public class HelloServiceTest {
             es.submit(new Runnable() {
                 @Override
                 public void run() {
-//                    HelloService helloService = rpcProxy.create(HelloService.class);
                     for (int i = 0; i < 10; i++) {
                         String result = helloService.hello("World");
                         Assert.assertEquals("Hello! World", result);
@@ -46,8 +42,12 @@ public class HelloServiceTest {
     }
 
     @Test
-    public void getLocalIp() throws UnknownHostException {
-        System.out.println("ip:" + InetAddresses.toAddrString(InetAddress.getLocalHost()));
+    public void getLocalIp() {
+        try {
+            System.out.println("ip:" + InetAddresses.toAddrString(InetAddress.getLocalHost()));
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+        }
     }
 
 }
