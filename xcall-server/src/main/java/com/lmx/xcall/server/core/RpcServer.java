@@ -2,10 +2,10 @@ package com.lmx.xcall.server.core;
 
 import com.google.common.net.HostAndPort;
 import com.google.common.net.InetAddresses;
-import com.lmx.xcall.client.RpcRequest;
-import com.lmx.xcall.client.RpcResponse;
 import com.lmx.xcall.common.RpcDecoder;
 import com.lmx.xcall.common.RpcEncoder;
+import com.lmx.xcall.common.RpcRequest;
+import com.lmx.xcall.common.RpcResponse;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;

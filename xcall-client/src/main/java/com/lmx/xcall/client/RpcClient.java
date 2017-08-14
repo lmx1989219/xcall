@@ -2,6 +2,8 @@ package com.lmx.xcall.client;
 
 import com.lmx.xcall.common.RpcDecoder;
 import com.lmx.xcall.common.RpcEncoder;
+import com.lmx.xcall.common.RpcRequest;
+import com.lmx.xcall.common.RpcResponse;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;

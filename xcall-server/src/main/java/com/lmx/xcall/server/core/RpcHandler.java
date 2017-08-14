@@ -1,7 +1,7 @@
 package com.lmx.xcall.server.core;
 
-import com.lmx.xcall.client.RpcRequest;
-import com.lmx.xcall.client.RpcResponse;
+import com.lmx.xcall.common.RpcRequest;
+import com.lmx.xcall.common.RpcResponse;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import net.sf.cglib.reflect.FastClass;

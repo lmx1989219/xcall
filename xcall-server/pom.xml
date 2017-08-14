@@ -19,11 +19,6 @@
         </dependency>
         <dependency>
             <groupId>com.lmx.xcall</groupId>
-            <artifactId>xcall-client</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
-        </dependency>
-        <dependency>
-            <groupId>com.lmx.xcall</groupId>
             <artifactId>xcall-common</artifactId>
             <version>0.0.1-SNAPSHOT</version>
         </dependency>

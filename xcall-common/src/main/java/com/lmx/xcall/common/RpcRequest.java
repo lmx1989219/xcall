@@ -1,4 +1,4 @@
-package com.lmx.xcall.client;
+package com.lmx.xcall.common;
 
 import java.util.Arrays;
 

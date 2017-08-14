@@ -2,6 +2,8 @@ package com.lmx.xcall.client;
 
 import com.google.common.collect.Lists;
 import com.google.common.net.HostAndPort;
+import com.lmx.xcall.common.RpcRequest;
+import com.lmx.xcall.common.RpcResponse;
 import io.netty.util.internal.ConcurrentSet;
 import net.sf.cglib.proxy.InvocationHandler;
 import net.sf.cglib.proxy.Proxy;
