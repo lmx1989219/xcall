@@ -87,7 +87,7 @@ public class RpcServer implements ApplicationContextAware, InitializingBean {
                                     .addLast(new RpcEncoder(RpcResponse.class))
                                     .addLast(new RpcHandler(handlerMap));
                         }
-                    }).option(ChannelOption.SO_BACKLOG, 128).childOption(ChannelOption.SO_KEEPALIVE, true);
+                    }).option(ChannelOption.SO_BACKLOG, 128).childOption(ChannelOption.TCP_NODELAY, true);
 
             HostAndPort hostAndPort = HostAndPort.fromHost(serverAddress);
             String host = hostAndPort.getHostText();

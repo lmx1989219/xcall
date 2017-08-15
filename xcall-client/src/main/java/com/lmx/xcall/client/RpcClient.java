@@ -25,7 +25,7 @@ public class RpcClient extends SimpleChannelInboundHandler<RpcResponse> {
     private int port;
     private Channel channel;
     private final Map<String, SendFuture> sendFutureMap = new ConcurrentHashMap<>();
-    private long maxWait = 5000;
+    private long maxWait = 10 * 1000;
 
     public RpcClient(String host, int port) {
         this.host = host;
@@ -43,7 +43,7 @@ public class RpcClient extends SimpleChannelInboundHandler<RpcResponse> {
                         .addLast(new RpcDecoder(RpcResponse.class))
                         .addLast(RpcClient.this);
             }
-        }).option(ChannelOption.SO_KEEPALIVE, true);
+        }).option(ChannelOption.TCP_NODELAY, true);
 
         try {
             ChannelFuture future = bootstrap.connect(host, port).sync();
@@ -72,7 +72,6 @@ public class RpcClient extends SimpleChannelInboundHandler<RpcResponse> {
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-//        LOGGER.error("client caught exception", cause);
         ctx.close();
     }
 
@@ -80,7 +79,7 @@ public class RpcClient extends SimpleChannelInboundHandler<RpcResponse> {
         SendFuture future = new SendFuture();
         future.setCd(new CountDownLatch(1));
         sendFutureMap.put(request.getRequestId(), future);
-        LOGGER.info("invoke begin,req:{}", request);
+        LOGGER.debug("xcall invoke begin,req is:{}", request);
         checkConn();
         channel.writeAndFlush(request);
         RpcResponse response = future.get(maxWait, TimeUnit.MILLISECONDS);

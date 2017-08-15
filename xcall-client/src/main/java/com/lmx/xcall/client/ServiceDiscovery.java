@@ -1,5 +1,6 @@
 package com.lmx.xcall.client;
 
+import com.google.common.eventbus.EventBus;
 import com.lmx.xcall.common.Constant;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
@@ -25,11 +26,13 @@ public class ServiceDiscovery {
 
     private String registryAddress;
 
+    public static EventBus eventBus = new EventBus();
+
     public ServiceDiscovery(String registryAddress) {
         this.registryAddress = registryAddress;
     }
 
-    public void subScriber(List<String> serviceNames) {
+    public void subScribe(List<String> serviceNames) {
         ZooKeeper zk = connectServer();
         if (zk != null) {
             watchNode(zk, serviceNames);
@@ -44,6 +47,16 @@ public class ServiceDiscovery {
             LOGGER.debug("using only data: {}", data);
         }
         return data;
+    }
+
+    static public class EventObj {
+        String serviceName;
+        List<String> data;
+
+        public EventObj(String serviceName, List<String> data) {
+            this.serviceName = serviceName;
+            this.data = data;
+        }
     }
 
     private ZooKeeper connectServer() {
@@ -67,7 +80,7 @@ public class ServiceDiscovery {
     private void watchNode(final ZooKeeper zk, final List<String> serviceNames) {
         try {
             for (final String serviceName : serviceNames) {
-                List<String> nodeList = zk.getChildren(Constant.ZK_DATA_PATH, new Watcher() {
+                List<String> nodeList = zk.getChildren(Constant.ZK_REGISTRY_PATH + "/" + serviceName, new Watcher() {
                     @Override
                     public void process(WatchedEvent event) {
                         if (event.getType() == Event.EventType.NodeChildrenChanged) {
@@ -77,11 +90,12 @@ public class ServiceDiscovery {
                 });
                 List<String> dataList = new ArrayList<>();
                 for (String node : nodeList) {
-                    byte[] bytes = zk.getData(Constant.ZK_DATA_PATH + "/" + node, false, null);
+                    byte[] bytes = zk.getData(Constant.ZK_REGISTRY_PATH + "/" + serviceName + "/" + node, false, null);
                     dataList.add(new String(bytes));
                 }
                 LOGGER.debug("node data: {}", dataList);
                 this.dataList.put(serviceName, dataList);
+                eventBus.post(new EventObj(serviceName, dataList));
             }
         } catch (KeeperException | InterruptedException e) {
             LOGGER.error("", e);

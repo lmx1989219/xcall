@@ -2,6 +2,7 @@ package simple;
 
 
 import com.google.common.net.InetAddresses;
+import com.lmx.xcall.server.modules.simple.EchoService;
 import com.lmx.xcall.server.modules.simple.HelloService;
 import org.junit.Assert;
 import org.junit.Test;
@@ -21,20 +22,26 @@ public class HelloServiceTest {
 
     @Autowired
     HelloService helloService;
+    @Autowired
+    EchoService echoService;
     ExecutorService es = Executors.newFixedThreadPool(8);
 
     @Test
     public void helloTest() {
         try {
-            es.submit(new Runnable() {
-                @Override
-                public void run() {
-                    for (int i = 0; i < 10; i++) {
-                        String result = helloService.hello("World");
-                        Assert.assertEquals("Hello! World", result);
+            for (int i = 0; i < 100; i++) {
+                es.submit(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            Assert.assertEquals("Hello! World", helloService.hello("World"));
+                            Assert.assertEquals("echo! 0", echoService.echo("0"));
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
                     }
-                }
-            });
+                });
+            }
             Thread.sleep(Long.MAX_VALUE);
         } catch (Exception e) {
             e.printStackTrace();

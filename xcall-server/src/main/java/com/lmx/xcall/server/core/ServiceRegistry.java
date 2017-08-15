@@ -5,7 +5,6 @@ import org.apache.zookeeper.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 
 
@@ -21,21 +20,19 @@ public class ServiceRegistry {
         this.registryAddress = registryAddress;
     }
 
-    //增加服务名称做为key
-    public void register(String appName, String data) {
+    public void register(String serviceName, String data) {
         if (data != null) {
-            ZooKeeper zk = connectServer();
+            ZooKeeper zk = connectServer(serviceName);
             if (zk != null) {
-                createNode(zk, appName, data);
+                createNode(zk, serviceName, data);
             }
         }
     }
 
-    private ZooKeeper connectServer() {
+    private ZooKeeper connectServer(String serviceName) {
         ZooKeeper zk = null;
         try {
             zk = new ZooKeeper(registryAddress, Constant.ZK_SESSION_TIMEOUT, new Watcher() {
-
                 public void process(WatchedEvent event) {
                     if (event.getState() == Event.KeeperState.SyncConnected) {
                         latch.countDown();
@@ -43,27 +40,22 @@ public class ServiceRegistry {
                 }
             });
             latch.await();
-        } catch (IOException | InterruptedException e) {
-            LOGGER.error("", e);
-        }
-        try {
             if (zk.exists(Constant.ZK_REGISTRY_PATH, true) == null)
                 zk.create(Constant.ZK_REGISTRY_PATH, "".getBytes(), ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-            if (zk.exists(Constant.ZK_DATA_PATH, true) == null)
-                zk.create(Constant.ZK_DATA_PATH, "".getBytes(), ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-        } catch (KeeperException e) {
-            e.printStackTrace();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+            if (zk.exists(Constant.ZK_REGISTRY_PATH + "/" + serviceName, true) == null)
+                zk.create(Constant.ZK_REGISTRY_PATH + "/" + serviceName, "".getBytes(), ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+        } catch (Exception e) {
+            LOGGER.error("", e);
         }
         return zk;
     }
 
-    private void createNode(ZooKeeper zk, String appName, String data) {
+    private void createNode(ZooKeeper zk, String serviceName, String data) {
         try {
             byte[] bytes = data.getBytes();
-            String path = zk.create(Constant.ZK_DATA_PATH + "/" + appName, bytes, ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL_SEQUENTIAL);
-            LOGGER.debug("create zookeeper node ({} => {})", path, data);
+            //FIXME must only build struct with tree
+            zk.create(Constant.ZK_REGISTRY_PATH + "/" + serviceName + "/" + serviceName, bytes, ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL_SEQUENTIAL);
+            LOGGER.info("service {} provider success on remote host {}", serviceName, data);
         } catch (KeeperException | InterruptedException e) {
             LOGGER.error("", e);
         }

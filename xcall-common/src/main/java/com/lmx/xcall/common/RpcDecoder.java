@@ -2,54 +2,27 @@ package com.lmx.xcall.common;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.handler.codec.ByteToMessageDecoder;
-import io.netty.handler.codec.MessageToByteEncoder;
+import io.netty.handler.codec.ReplayingDecoder;
 
 import java.util.List;
 
-public class RpcDecoder extends ByteToMessageDecoder {
+/**
+ * FIXME 大并发下推荐用 ReplayingDecoder，否则会导致buffer溢出
+ */
+public class RpcDecoder extends ReplayingDecoder {
 
-	private Class<?> genericClass;
+    private Class<?> genericClass;
 
-	public RpcDecoder(Class<?> genericClass) {
-		this.genericClass = genericClass;
-	}
+    public RpcDecoder(Class<?> genericClass) {
+        this.genericClass = genericClass;
+    }
 
-	@Override
-	public final void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
-		if (in.readableBytes() < 4) {
-			return;
-		}
-		in.markReaderIndex();
-		int dataLength = in.readInt();
-		if (dataLength < 0) {
-			ctx.close();
-		}
-		if (in.readableBytes() < dataLength) {
-			in.resetReaderIndex();
-		}
-		byte[] data = new byte[dataLength];
-		in.readBytes(data);
-
-		Object obj = SerializationUtil.deserialize(data, genericClass);
-		out.add(obj);
-	}
-
-    public static class RpcEncoder extends MessageToByteEncoder<Object> {
-
-        private Class<?> genericClass;
-
-        public RpcEncoder(Class<?> genericClass) {
-            this.genericClass = genericClass;
-        }
-
-        @Override
-        public void encode(ChannelHandlerContext ctx, Object in, ByteBuf out) throws Exception {
-            if (genericClass.isInstance(in)) {
-                byte[] data = SerializationUtil.serialize(in);
-                out.writeInt(data.length);
-                out.writeBytes(data);
-            }
-        }
+    @Override
+    public final void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
+        int dataLength = in.readInt();
+        byte[] data = new byte[dataLength];
+        in.readBytes(data);
+        Object obj = SerializationUtil.deserialize(data, genericClass);
+        out.add(obj);
     }
 }

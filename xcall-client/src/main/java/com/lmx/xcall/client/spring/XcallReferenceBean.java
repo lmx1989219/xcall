@@ -25,7 +25,7 @@ public class XcallReferenceBean implements FactoryBean, ApplicationContextAware,
 
     @Override
     public Object getObject() throws Exception {
-        proxy.getServiceDiscovery().subScriber(Lists.newArrayList(classObj.getName()));
+        proxy.getServiceDiscovery().subScribe(Lists.newArrayList(classObj.getName()));
         return proxy.create(classObj);
     }
 

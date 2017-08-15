@@ -1,6 +1,7 @@
 package com.lmx.xcall.client;
 
 import com.google.common.collect.Lists;
+import com.google.common.eventbus.Subscribe;
 import com.google.common.net.HostAndPort;
 import com.lmx.xcall.common.RpcRequest;
 import com.lmx.xcall.common.RpcResponse;
@@ -60,6 +61,7 @@ public class RpcProxy {
     public RpcProxy(ServiceDiscovery serviceDiscovery) {
         this.serviceDiscovery = serviceDiscovery;
         checkActive.start();
+        ServiceDiscovery.eventBus.register(this);
     }
 
     @SuppressWarnings("unchecked")
@@ -78,21 +80,22 @@ public class RpcProxy {
                         LOGGER.debug("cur thread {} invoke {}", Thread.currentThread().getId(), uniqueKey);
                         Set<RpcClient> clients = getConnPool(uniqueKey);
                         if (!CollectionUtils.isEmpty(clients)) {
-                            LOGGER.debug("req id {}", request.getRequestId());
                             List<RpcClient> clientList = Lists.newArrayList(clients.iterator());
                             RpcResponse response = clientList.get((int) System.currentTimeMillis() % clients.size())
                                     .send(request);
-                            LOGGER.debug("resp id {}", response.getRequestId());
                             if (response.isError()) {
                                 throw response.getError();
                             } else {
                                 return response.getResult();
                             }
+                        } else {
+                            LOGGER.warn("no provider for service {}", uniqueKey);
                         }
                         return null;
                     }
                 });
     }
+
 
     private Set<RpcClient> getConnPool(String uniqueKey) {
         if (serviceDiscovery != null) {
@@ -101,21 +104,28 @@ public class RpcProxy {
         if (CollectionUtils.isEmpty(serverAddress)) {
             return null;
         }
-        for (String add : serverAddress) {
+        return connPool.get(uniqueKey);
+    }
+
+    @Subscribe
+    private void subService(ServiceDiscovery.EventObj eventObj) {
+        for (String add : eventObj.data) {
             HostAndPort hostAndPort = HostAndPort.fromString(add);
             String host = hostAndPort.getHostText();
             int port = hostAndPort.getPort();
             RpcClient client = new RpcClient(host, port);
+            String uniqueKey = eventObj.serviceName;
             if (!connPool.containsKey(uniqueKey)) {
                 connPool.put(uniqueKey, new ConcurrentSet<RpcClient>());
             }
             if (!connPool.get(uniqueKey).contains(client)) {
                 client.initConn();
+                LOGGER.info("subscribe service {} success on remote host:{}", uniqueKey, client);
                 connPool.get(uniqueKey).add(client);
             }
         }
-        return connPool.get(uniqueKey);
     }
+
 
     public void removePool(String uniqueKey, RpcClient client) {
         LOGGER.debug("remove inactive conn {}", client);
