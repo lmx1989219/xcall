@@ -121,6 +121,11 @@ public class RpcProxy {
             if (!connPool.get(uniqueKey).contains(client)) {
                 client.initConn();
                 LOGGER.info("subscribe service {} success on remote host:{}", uniqueKey, client);
+                //init a five number of conn
+                connPool.get(uniqueKey).add(client);
+                connPool.get(uniqueKey).add(client);
+                connPool.get(uniqueKey).add(client);
+                connPool.get(uniqueKey).add(client);
                 connPool.get(uniqueKey).add(client);
             }
         }

@@ -24,8 +24,8 @@ public class RpcClient extends SimpleChannelInboundHandler<RpcResponse> {
     private String host;
     private int port;
     private Channel channel;
-    private final Map<String, SendFuture> sendFutureMap = new ConcurrentHashMap<>();
-    private long maxWait = 10 * 1000;
+    private static final Map<String, SendFuture> SEND_FUTURE_MAP = new ConcurrentHashMap<>();
+    private static final long MAX_WAIT = 10 * 1000;
 
     public RpcClient(String host, int port) {
         this.host = host;
@@ -59,30 +59,31 @@ public class RpcClient extends SimpleChannelInboundHandler<RpcResponse> {
             return;
         String seqNo = response.getRequestId();
         try {
-            SendFuture future = sendFutureMap.get(seqNo);
+            SendFuture future = SEND_FUTURE_MAP.get(seqNo);
             if (future != null) {
                 future.setResponse(response);
                 future.isDone();
             }
         } finally {
-            sendFutureMap.remove(seqNo);
+            SEND_FUTURE_MAP.remove(seqNo);
         }
 
     }
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+        LOGGER.error("client cause exception", cause);
         ctx.close();
     }
 
     public RpcResponse send(RpcRequest request) throws Exception {
         SendFuture future = new SendFuture();
         future.setCd(new CountDownLatch(1));
-        sendFutureMap.put(request.getRequestId(), future);
+        SEND_FUTURE_MAP.put(request.getRequestId(), future);
         LOGGER.debug("xcall invoke begin,req is:{}", request);
         checkConn();
         channel.writeAndFlush(request);
-        RpcResponse response = future.get(maxWait, TimeUnit.MILLISECONDS);
+        RpcResponse response = future.get(MAX_WAIT, TimeUnit.MILLISECONDS);
         if (response != null) {
             return response;
         }

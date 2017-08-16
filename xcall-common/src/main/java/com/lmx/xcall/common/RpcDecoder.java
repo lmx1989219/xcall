@@ -7,7 +7,7 @@ import io.netty.handler.codec.ReplayingDecoder;
 import java.util.List;
 
 /**
- * FIXME 大并发下推荐用 ReplayingDecoder，否则会导致buffer溢出
+ * high concurrency suggest ReplayingDecoder,otherwise cause buffer overflow
  */
 public class RpcDecoder extends ReplayingDecoder {
 
