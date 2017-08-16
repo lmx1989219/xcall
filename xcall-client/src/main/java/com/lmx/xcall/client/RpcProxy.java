@@ -29,8 +29,7 @@ public class RpcProxy {
                 try {
                     if (clientPool.getConnPool().size() == 0)
                         continue;
-                    for (Object objs : clientPool.getConnPool().entrySet()) {
-                        Map.Entry<String, BlockingQueue<RpcClient>> entry = (Map.Entry<String, BlockingQueue<RpcClient>>) objs;
+                    for (Map.Entry<String, BlockingQueue<RpcClient>> entry : clientPool.getConnPool().entrySet()) {
                         Iterator<RpcClient> clients = entry.getValue().iterator();
                         while (clients.hasNext()) {
                             RpcRequest request = new RpcRequest();
@@ -78,7 +77,7 @@ public class RpcProxy {
                         request.setParameters(args);
                         String uniqueKey = request.getClassName();
                         LOGGER.debug("cur thread {} invoke {}", Thread.currentThread().getId(), uniqueKey);
-                        RpcClient client = (RpcClient) clientPool.getConn(uniqueKey);
+                        RpcClient client = clientPool.getConn(uniqueKey);
                         if (client != null) {
                             try {
                                 RpcResponse response = client.sendAndGet(request);

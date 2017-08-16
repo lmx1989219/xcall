@@ -10,7 +10,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * Created by limingxin on 2017/8/16.
  */
-public class RpcClientPool<RpcClient> {
+public class RpcClientPool {
     private Map<String, BlockingQueue<RpcClient>> connPool = new ConcurrentHashMap<>();
     private final static long TIME_OUT = 5000;
     private int poolSize = 5;
