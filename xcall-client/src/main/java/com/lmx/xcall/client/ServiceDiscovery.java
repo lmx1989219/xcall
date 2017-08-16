@@ -2,18 +2,14 @@ package com.lmx.xcall.client;
 
 import com.google.common.eventbus.EventBus;
 import com.lmx.xcall.common.Constant;
-import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 
 
@@ -21,8 +17,6 @@ public class ServiceDiscovery {
     private static final Logger LOGGER = LoggerFactory.getLogger(ServiceDiscovery.class);
 
     private CountDownLatch latch = new CountDownLatch(1);
-
-    private Map<String, List<String>> dataList = new ConcurrentHashMap<>();
 
     private String registryAddress;
 
@@ -37,16 +31,6 @@ public class ServiceDiscovery {
         if (zk != null) {
             watchNode(zk, serviceNames);
         }
-    }
-
-    public List<String> discover(String serviceName) {
-        int size = dataList.size();
-        List<String> data = null;
-        if (size > 0) {
-            data = dataList.get(serviceName);
-            LOGGER.debug("using only data: {}", data);
-        }
-        return data;
     }
 
     static public class EventObj {
@@ -71,7 +55,7 @@ public class ServiceDiscovery {
                 }
             });
             latch.await();
-        } catch (IOException | InterruptedException e) {
+        } catch (Exception e) {
             LOGGER.error("", e);
         }
         return zk;
@@ -94,10 +78,9 @@ public class ServiceDiscovery {
                     dataList.add(new String(bytes));
                 }
                 LOGGER.debug("node data: {}", dataList);
-                this.dataList.put(serviceName, dataList);
                 eventBus.post(new EventObj(serviceName, dataList));
             }
-        } catch (KeeperException | InterruptedException e) {
+        } catch (Exception e) {
             LOGGER.error("", e);
         }
     }

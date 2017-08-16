@@ -76,7 +76,7 @@ public class RpcClient extends SimpleChannelInboundHandler<RpcResponse> {
         ctx.close();
     }
 
-    public RpcResponse send(RpcRequest request) throws Exception {
+    public RpcResponse sendAndGet(RpcRequest request) throws Exception {
         SendFuture future = new SendFuture();
         future.setCd(new CountDownLatch(1));
         SEND_FUTURE_MAP.put(request.getRequestId(), future);

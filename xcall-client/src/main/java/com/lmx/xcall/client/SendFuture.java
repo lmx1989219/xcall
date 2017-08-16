@@ -9,27 +9,10 @@ import java.util.concurrent.*;
  */
 public class SendFuture implements Future<RpcResponse> {
     CountDownLatch cd;
-    String requestId;
     RpcResponse response;
-
-    public CountDownLatch getCd() {
-        return cd;
-    }
 
     public void setCd(CountDownLatch cd) {
         this.cd = cd;
-    }
-
-    public String getRequestId() {
-        return requestId;
-    }
-
-    public void setRequestId(String requestId) {
-        this.requestId = requestId;
-    }
-
-    public RpcResponse getResponse() {
-        return response;
     }
 
     public void setResponse(RpcResponse response) {
