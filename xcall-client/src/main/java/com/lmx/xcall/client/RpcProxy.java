@@ -4,21 +4,20 @@ import com.google.common.eventbus.Subscribe;
 import com.google.common.net.HostAndPort;
 import com.lmx.xcall.common.RpcRequest;
 import com.lmx.xcall.common.RpcResponse;
-import io.netty.util.internal.ConcurrentSet;
 import net.sf.cglib.proxy.InvocationHandler;
 import net.sf.cglib.proxy.Proxy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Method;
-import java.util.*;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class RpcProxy {
     private long checkPeroid = 3000;
     private ServiceDiscovery serviceDiscovery;
-    private Map<String, Set<RpcClient>> connPool = new ConcurrentHashMap<>();
     private RpcClientPool clientPool = new RpcClientPool();
     private static final Logger LOGGER = LoggerFactory.getLogger(RpcProxy.class);
 
@@ -41,7 +40,6 @@ public class RpcProxy {
                                 LOGGER.debug("conn:{} is ok", client);
                             } catch (Exception e) {
                                 LOGGER.error("{} conn error", client, e);
-                                removePool(entry.getKey(), client);
                                 clientPool.removeConn(entry.getKey(), client);
                             }
                         }
@@ -106,22 +104,9 @@ public class RpcProxy {
             int port = hostAndPort.getPort();
             RpcClient client = new RpcClient(host, port);
             String uniqueKey = eventObj.serviceName;
-            if (!connPool.containsKey(uniqueKey)) {
-                connPool.put(uniqueKey, new ConcurrentSet<RpcClient>());
-            }
-            if (!connPool.get(uniqueKey).contains(client)) {
-                client.initConn();
-                LOGGER.info("subscribe service {} success on remote host:{}", uniqueKey, client);
-                connPool.get(uniqueKey).add(client);
-                clientPool.init(uniqueKey, client);
-            }
+            LOGGER.info("subscribe service {} success on remote host:{}", uniqueKey, client);
+            clientPool.init(uniqueKey, client);
         }
-    }
-
-
-    public void removePool(String uniqueKey, RpcClient client) {
-        LOGGER.debug("remove inactive conn {}", client);
-        connPool.get(uniqueKey).remove(client);
     }
 
     public ServiceDiscovery getServiceDiscovery() {
