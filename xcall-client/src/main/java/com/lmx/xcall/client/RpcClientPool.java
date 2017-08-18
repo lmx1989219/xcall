@@ -13,25 +13,19 @@ import java.util.concurrent.TimeUnit;
 public class RpcClientPool {
     private Map<String, BlockingQueue<RpcClient>> connPool = new ConcurrentHashMap<>();
     private final static long TIME_OUT = 5000;
-    private int poolSize = 16;
-    private int minPoolSize = 16 / 4;
+    private int poolSize = 32;
+    private int minPoolSize = 2;
 
-    void init(String uniqueKey, RpcClient rpcClient) {
+    void init(String uniqueKey, String host, int port) {
         if (!connPool.containsKey(uniqueKey)) {
             connPool.put(uniqueKey, new ArrayBlockingQueue<RpcClient>(poolSize));
-            rpcClient.initConn();
-            for (int i = 0; i < minPoolSize; i++) {
-                connPool.get(uniqueKey).add(rpcClient);
-            }
-        } else {
-            addItem(uniqueKey, rpcClient);
         }
-    }
-
-    void addItem(String uniqueKey, RpcClient rpcClient) {
-        if (!connPool.get(uniqueKey).contains(rpcClient)) {
-            rpcClient.initConn();
-            connPool.get(uniqueKey).add(rpcClient);
+        for (int i = 0; i < minPoolSize; i++) {
+            RpcClient client = new RpcClient(host, port);
+            client.initConn();
+            if (connPool.get(uniqueKey).size() == poolSize)
+                return;
+            connPool.get(uniqueKey).add(client);
         }
     }
 

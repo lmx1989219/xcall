@@ -44,6 +44,8 @@ public class RpcProxy {
                             }
                         }
                     }
+                } catch (Exception e) {
+                    LOGGER.error("", e);
                 } finally {
                     try {
                         Thread.sleep(checkPeroid);
@@ -102,10 +104,9 @@ public class RpcProxy {
             HostAndPort hostAndPort = HostAndPort.fromString(add);
             String host = hostAndPort.getHostText();
             int port = hostAndPort.getPort();
-            RpcClient client = new RpcClient(host, port);
             String uniqueKey = eventObj.serviceName;
-            LOGGER.info("subscribe service {} success on remote host:{}", uniqueKey, client);
-            clientPool.init(uniqueKey, client);
+            LOGGER.info("subscribe service {} success on remote host {}:{}", uniqueKey, host, port);
+            clientPool.init(uniqueKey, host, port);
         }
     }
 

@@ -1,10 +1,12 @@
 package com.lmx.xcall.server.core;
 
+import com.google.common.hash.Hashing;
 import com.lmx.xcall.common.Constant;
 import org.apache.zookeeper.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 
 
@@ -54,7 +56,8 @@ public class ServiceRegistry {
         try {
             byte[] bytes = data.getBytes();
             //FIXME must only build struct with tree
-            zk.create(Constant.ZK_REGISTRY_PATH + "/" + serviceName + "/" + serviceName, bytes, ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL_SEQUENTIAL);
+            zk.create(Constant.ZK_REGISTRY_PATH + "/" + serviceName + "/" + Hashing.sha1().hashBytes(UUID.randomUUID().toString().getBytes()),
+                    bytes, ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL_SEQUENTIAL);
             LOGGER.info("service {} provider success on remote host {}", serviceName, data);
         } catch (KeeperException | InterruptedException e) {
             LOGGER.error("", e);

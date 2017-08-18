@@ -1,5 +1,6 @@
 package com.lmx.xcall.client;
 
+import com.google.common.collect.Lists;
 import com.google.common.eventbus.EventBus;
 import com.lmx.xcall.common.Constant;
 import org.apache.zookeeper.WatchedEvent;
@@ -20,6 +21,8 @@ public class ServiceDiscovery {
 
     private String registryAddress;
 
+    private List<String> serviceNames = Lists.newArrayList();
+
     public static EventBus eventBus = new EventBus();
 
     public ServiceDiscovery(String registryAddress) {
@@ -29,6 +32,7 @@ public class ServiceDiscovery {
     public void subScribe(List<String> serviceNames) {
         ZooKeeper zk = connectServer();
         if (zk != null) {
+            this.serviceNames.addAll(serviceNames);
             watchNode(zk, serviceNames);
         }
     }
@@ -61,9 +65,9 @@ public class ServiceDiscovery {
         return zk;
     }
 
-    private void watchNode(final ZooKeeper zk, final List<String> serviceNames) {
+    private void watchNode(final ZooKeeper zk, final List<String> serviceNames_) {
         try {
-            for (final String serviceName : serviceNames) {
+            for (final String serviceName : serviceNames_) {
                 List<String> nodeList = zk.getChildren(Constant.ZK_REGISTRY_PATH + "/" + serviceName, new Watcher() {
                     @Override
                     public void process(WatchedEvent event) {

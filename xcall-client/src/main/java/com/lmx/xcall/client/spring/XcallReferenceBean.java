@@ -14,6 +14,7 @@ import org.springframework.context.ApplicationContextAware;
 public class XcallReferenceBean implements FactoryBean, ApplicationContextAware, InitializingBean {
     Class classObj;
     RpcProxy proxy;
+    Object object;
 
     public Class getClassObj() {
         return classObj;
@@ -25,8 +26,11 @@ public class XcallReferenceBean implements FactoryBean, ApplicationContextAware,
 
     @Override
     public Object getObject() throws Exception {
-        proxy.getServiceDiscovery().subScribe(Lists.newArrayList(classObj.getName()));
-        return proxy.create(classObj);
+        if (object == null) {
+            proxy.getServiceDiscovery().subScribe(Lists.newArrayList(classObj.getName()));
+            return object = proxy.create(classObj);
+        }
+        return object;
     }
 
     @Override
