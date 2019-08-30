@@ -66,35 +66,32 @@ public class RpcProxy {
     @SuppressWarnings("unchecked")
     public <T> T create(Class<?> interfaceClass) {
         return (T) Proxy.newProxyInstance(interfaceClass.getClassLoader(), new Class<?>[]{interfaceClass},
-                new InvocationHandler() {
-                    @Override
-                    public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-                        RpcRequest request = new RpcRequest();
-                        request.setRequestId(UUID.randomUUID().toString());
-                        request.setClassName(method.getDeclaringClass().getName());
-                        request.setMethodName(method.getName());
-                        request.setParameterTypes(method.getParameterTypes());
-                        request.setParameters(args);
-                        String uniqueKey = request.getClassName();
-                        LOGGER.debug("cur thread {} invoke {}", Thread.currentThread().getId(), uniqueKey);
-                        RpcClient client = clientPool.getConn(uniqueKey);
-                        if (client != null) {
-                            try {
-                                RpcResponse response = client.sendAndGet(request);
-                                if (response.isError()) {
-                                    throw response.getError();
-                                } else {
-                                    return response.getResult();
-                                }
-                            } finally {
-                                clientPool.releaseConn(uniqueKey, client);
+                (proxy, method, args) -> {
+                    RpcRequest request = new RpcRequest();
+                    request.setRequestId(UUID.randomUUID().toString());
+                    request.setClassName(method.getDeclaringClass().getName());
+                    request.setMethodName(method.getName());
+                    request.setParameterTypes(method.getParameterTypes());
+                    request.setParameters(args);
+                    String uniqueKey = request.getClassName();
+                    LOGGER.debug("cur thread {} invoke {}", Thread.currentThread().getId(), uniqueKey);
+                    RpcClient client = clientPool.getConn(uniqueKey);
+                    if (client != null) {
+                        try {
+                            RpcResponse response = client.sendAndGet(request);
+                            if (response.isError()) {
+                                throw response.getError();
+                            } else {
+                                return response.getResult();
                             }
-                        } else {
-                            LOGGER.warn("no provider for service {}", uniqueKey);
+                        } finally {
+                            clientPool.releaseConn(uniqueKey, client);
                         }
-
-                        return null;
+                    } else {
+                        LOGGER.warn("no provider for service {}", uniqueKey);
                     }
+
+                    return null;
                 });
     }
 

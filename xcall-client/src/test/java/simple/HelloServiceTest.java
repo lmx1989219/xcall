@@ -15,34 +15,33 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(locations = {"classpath:spring-client.xml", "classpath:rpc-config.xml"})
+@ContextConfiguration(locations = {"classpath:spring-client.xml"/*, "classpath:rpc-config.xml"*/})
 public class HelloServiceTest {
 
     @Autowired
     HelloService helloService;
-    @Autowired
-    EchoService echoService;
+    //    @Autowired
+//    EchoService echoService;
     ExecutorService es = Executors.newFixedThreadPool(8);
 
     @Test
     public void helloTest() {
         try {
-            for (int i = 0; i < 100; i++) {
-                es.submit(new Runnable() {
-                    @Override
-                    public void run() {
-                        try {
-                            Assert.assertEquals("Hello! World", helloService.hello("World"));
-                            Assert.assertEquals("echo! 0", echoService.echo("0"));
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
+            for (int i = 0; i < 10; i++) {
+                es.submit(() -> {
+                    try {
+                        Assert.assertEquals("Hello! World", helloService.hello("World"));
+//                            Assert.assertEquals("echo! 0", echoService.echo("0"));
+                    } catch (Exception e) {
+                        e.printStackTrace();
                     }
                 });
             }
-            Thread.sleep(Long.MAX_VALUE);
+            es.shutdown();
+            es.awaitTermination(10, TimeUnit.SECONDS);
         } catch (Exception e) {
             e.printStackTrace();
         }

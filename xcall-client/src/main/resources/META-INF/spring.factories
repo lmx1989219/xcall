@@ -1,2 +1,2 @@
 org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
-com.lmx.xcall.client.springboot.XcallAutoConfigurationBean
+com.lmx.xcall.client.springboot.XcallAutoConfiguration

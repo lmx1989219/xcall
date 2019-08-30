@@ -31,7 +31,6 @@
             <groupId>com.lmx.xcall</groupId>
             <artifactId>xcall-server</artifactId>
             <version>0.0.1-SNAPSHOT</version>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>junit</groupId>
